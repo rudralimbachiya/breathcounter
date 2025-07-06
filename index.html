@@ -1,0 +1,207 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lifetime Breath Counter</title>
+  <style>
+    :root {
+      --bg-light: #f9f9f9;
+      --text-light: #333;
+      --bg-dark: #121212;
+      --text-dark: #e0e0e0;
+      --card-light: #fff;
+      --card-dark: #1e1e1e;
+    }* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background-color: var(--bg-light);
+  color: var(--text-light);
+  transition: background-color 0.3s, color 0.3s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  margin: 0;
+}
+
+body.dark-mode {
+  background-color: var(--bg-dark);
+  color: var(--text-dark);
+}
+
+h1 {
+  font-size: 1.75rem;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+label, select, input, button {
+  font-size: 1rem;
+  margin: 8px 0;
+  display: block;
+  width: 100%;
+}
+
+.container {
+  width: 100%;
+  max-width: 400px;
+  padding: 20px;
+  background: var(--card-light);
+  border-radius: 12px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  transition: background 0.3s;
+}
+
+body.dark-mode .container {
+  background: var(--card-dark);
+}
+
+.timer-button {
+  margin-top: 10px;
+  background: #000;
+  color: #fff;
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.toggle-mode {
+  margin-bottom: 20px;
+  background: transparent;
+  border: 1px solid currentColor;
+  color: inherit;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.result {
+  margin-top: 20px;
+  font-weight: bold;
+  word-wrap: break-word;
+}
+
+@media (max-width: 600px) {
+  body {
+    padding: 10px;
+  }
+
+  .container {
+    padding: 15px;
+    border-radius: 8px;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+  }
+}
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <button class="toggle-mode" onclick="toggleDarkMode()">Toggle Dark Mode</button><h1>Lifetime Breath Counter</h1>
+
+<label for="bpmOption">Do you know your Breaths Per Minute (BPM)?</label>
+<select id="bpmOption">
+  <option value="yes">Yes</option>
+  <option value="no">No, I'll count</option>
+</select>
+
+<div id="bpmInputSection">
+  <label for="bpm">Enter BPM:</label>
+  <input type="number" id="bpm" placeholder="e.g., 16" />
+</div>
+
+<button class="timer-button" id="startTimer" style="display:none">Start 1 Minute Timer</button>
+
+<label for="dob">Date of Birth:</label>
+<input type="date" id="dob" />
+
+<label for="tob">Time of Birth:</label>
+<input type="time" id="tob" />
+
+<label for="lifespan">Expected Lifespan (in years):</label>
+<input type="number" id="lifespan" placeholder="e.g., 80" />
+
+<label for="mode">What do you want to know?</label>
+<select id="mode">
+  <option value="total">Total breaths in life</option>
+  <option value="taken">Breaths taken till now</option>
+  <option value="remaining">Breaths to be taken</option>
+</select>
+
+<button class="timer-button" onclick="calculateBreaths()">Calculate</button>
+
+<div class="result" id="result"></div>
+
+  </div>  <script>
+    const bpmOption = document.getElementById('bpmOption');
+    const bpmInputSection = document.getElementById('bpmInputSection');
+    const startTimer = document.getElementById('startTimer');
+
+    bpmOption.addEventListener('change', () => {
+      if (bpmOption.value === 'no') {
+        bpmInputSection.style.display = 'block';
+        startTimer.style.display = 'block';
+      } else {
+        bpmInputSection.style.display = 'block';
+        startTimer.style.display = 'none';
+      }
+    });
+
+    startTimer.addEventListener('click', () => {
+      let seconds = 60;
+      startTimer.disabled = true;
+      const interval = setInterval(() => {
+        startTimer.textContent = `Counting: ${seconds}s`;
+        seconds--;
+        if (seconds < 0) {
+          clearInterval(interval);
+          startTimer.textContent = 'Done!';
+          alert("1 minute is over. Please enter the number of breaths you counted.");
+          startTimer.disabled = false;
+        }
+      }, 1000);
+    });
+
+    function calculateBreaths() {
+      const bpm = parseFloat(document.getElementById('bpm').value);
+      const dob = new Date(document.getElementById('dob').value + 'T' + document.getElementById('tob').value);
+      const lifespan = parseInt(document.getElementById('lifespan').value);
+      const mode = document.getElementById('mode').value;
+
+      if (!bpm || !dob || !lifespan) {
+        alert("Please fill in all inputs correctly.");
+        return;
+      }
+
+      const deathDate = new Date(dob);
+      deathDate.setFullYear(deathDate.getFullYear() + lifespan);
+      const now = new Date();
+
+      let totalSeconds = 0;
+
+      if (mode === 'total') {
+        totalSeconds = (deathDate - dob) / 1000;
+      } else if (mode === 'taken') {
+        totalSeconds = (now - dob) / 1000;
+      } else if (mode === 'remaining') {
+        totalSeconds = (deathDate - now) / 1000;
+      }
+
+      const totalBreaths = Math.floor((totalSeconds / 60) * bpm);
+
+      document.getElementById('result').textContent = `Result: ${totalBreaths.toLocaleString()} breaths.`;
+    }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark-mode');
+    }
+  </script></body>
+</html>
