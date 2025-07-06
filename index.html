@@ -123,11 +123,14 @@ body.dark-mode .container {
 <label for="dob">Date of Birth:</label>
 <input type="date" id="dob" />
 
-<label for="tob">Time of Birth:</label>
-<input type="time" id="tob" />
+<label for="tob">Time of Birth (optional):</label>
+<input type="time" id="tob" placeholder="Defaults to 00:00" />
 
 <label for="lifespan">Expected Lifespan (in years):</label>
 <input type="number" id="lifespan" placeholder="e.g., 80" />
+
+<label for="startyear">What is the current year?</label>
+<input type="number" id="startyear" placeholder="e.g., 2025" />
 
 <label for="mode">What do you want to know?</label>
 <select id="mode">
@@ -170,19 +173,33 @@ body.dark-mode .container {
       }, 1000);
     });
 
+    function countLeapYears(startYear, lifespan) {
+      let leapCount = 0;
+      for (let y = startYear; y < startYear + lifespan; y++) {
+        if ((y % 4 === 0 && y % 100 !== 0) || y % 400 === 0) {
+          leapCount++;
+        }
+      }
+      return leapCount;
+    }
+
     function calculateBreaths() {
       const bpm = parseFloat(document.getElementById('bpm').value);
-      const dob = new Date(document.getElementById('dob').value + 'T' + document.getElementById('tob').value);
+      const dobStr = document.getElementById('dob').value;
+      const tobStr = document.getElementById('tob').value || "00:00";
       const lifespan = parseInt(document.getElementById('lifespan').value);
       const mode = document.getElementById('mode').value;
+      const startYear = parseInt(document.getElementById('startyear').value);
 
-      if (!bpm || !dob || !lifespan) {
-        alert("Please fill in all inputs correctly.");
+      if (!bpm || !dobStr || !lifespan || !startYear) {
+        alert("Please fill in all required inputs correctly.");
         return;
       }
 
+      const dob = new Date(dobStr + 'T' + tobStr);
       const deathDate = new Date(dob);
       deathDate.setFullYear(deathDate.getFullYear() + lifespan);
+
       const now = new Date();
 
       let totalSeconds = 0;
@@ -195,9 +212,16 @@ body.dark-mode .container {
         totalSeconds = (deathDate - now) / 1000;
       }
 
-      const totalBreaths = Math.floor((totalSeconds / 60) * bpm);
+      // Add leap year seconds
+      const leapDays = countLeapYears(startYear, lifespan);
+      const leapSeconds = leapDays * 24 * 60 * 60;
 
-      document.getElementById('result').textContent = `Result: ${totalBreaths.toLocaleString()} breaths.`;
+      if (mode === 'total') totalSeconds += leapSeconds;
+      else if (mode === 'remaining' && now < deathDate) totalSeconds += leapSeconds * ((deathDate - now) / (deathDate - dob));
+      else if (mode === 'taken' && now > dob) totalSeconds += leapSeconds * ((now - dob) / (deathDate - dob));
+
+      const totalBreaths = Math.floor((totalSeconds / 60) * bpm);
+      document.getElementById('result').textContent = `Result: ${isNaN(totalBreaths) ? 'Invalid input.' : totalBreaths.toLocaleString()} breaths.`;
     }
 
     function toggleDarkMode() {
